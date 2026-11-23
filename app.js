@@ -9,14 +9,8 @@
     {id:'zeta', num:'02', chapter:'第一章 · 函数与无穷求和', title:'ζ(2) 为什么越来越接近 1.645？', tag:'认识泽塔函数', intro:'试着增加求和项数，观察一个看似无穷的加法，如何逐渐接近确定的数字。'},
     {id:'rotate', num:'03', chapter:'第二章 · 复数与旋转', title:'为什么乘以 i 会旋转 90°？', tag:'认识虚数 i', intro:'从数字 1 开始，每按一次「乘以 i」，看看箭头发生什么变化。'},
     {id:'plane', num:'04', chapter:'第二章 · 复数与旋转', title:'复数为什么像二维坐标？', tag:'认识复平面', intro:'自己修改实部和虚部，看一个复数如何在平面上找到它的位置。'}
-  ];
-  const upcoming = [
-    ['03','指数、对数与欧拉公式','从 ln 2 到 e 的虚数次方，再到单位圆'],
-    ['04','Eta 函数与解析延拓','由 ζ(2) 推出交错求和，并弄懂适用范围'],
-    ['05','寻找非平凡零点','复数运算、数值寻找零点与误差'],
-    ['06','对称性与黎曼猜想','临界带、1/2 直线和哪些结论尚未证明'],
-    ['07','零点与质数分布','为什么零点能约束质数统计的误差']
-  ];
+  ].concat(window.RiemannExtra?.lessons || []);
+  const upcoming = [];
   const main = document.getElementById('main');
   const nav = document.getElementById('lessonNav');
   const topLesson = document.getElementById('topLesson');
@@ -27,7 +21,7 @@
   function loadProgress(){try{const v=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');return new Set(Array.isArray(v)?v.filter(x=>lessons.some(l=>l.id===x)):[]);}catch{return new Set();}}
   function saveProgress(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify([...done]));}catch{/* file URI / private browser may disallow storage */}}
   function renderNav(){
-    let groups=[['第一章 · 函数与无穷求和',lessons.slice(0,2)],['第二章 · 复数与旋转',lessons.slice(2,4)]];
+    let groups=[...new Set(lessons.map(l=>l.chapter))].map(title=>[title,lessons.filter(l=>l.chapter===title)]);
     nav.innerHTML=`<div class="nav-group"><button class="nav-item ${current==='home'?'active':''}" data-nav="home"><span class="nav-index">⌂</span><span class="nav-title">课程总览</span></button></div>`+
       groups.map(([title,items])=>`<div class="nav-group"><div class="nav-group-title">${title}</div>${items.map(l=>`<button class="nav-item ${current===l.id?'active':''}" data-nav="${l.id}" ${current===l.id?'aria-current="page"':''}><span class="nav-index">${l.num}</span><span class="nav-title">${l.title}</span>${done.has(l.id)?'<span class="nav-complete" aria-label="已完成">✓</span>':''}</button>`).join('')}</div>`).join('')+
       `<div class="nav-group"><div class="nav-group-title">后续课程 · 规划中</div>${upcoming.map(([num,title])=>`<div class="nav-item locked"><span class="nav-index">${num}</span><span class="nav-title">${title}</span><span class="nav-lock">🔒</span></div>`).join('')}</div>`;
@@ -43,32 +37,32 @@
   }
   function renderHome(){
     main.innerHTML=`<section class="home-hero"><div class="eyebrow">从零开始 · 不背结论</div><h1>亲手操作，<br/>直到真正理解数学。</h1><p>这不是让你记住「黎曼猜想的实部是 1/2」的速成教程。我们从最简单的函数出发，通过一步一问、操作实验和验证，慢慢走到那个伟大的问题。</p><button class="primary-btn" data-nav="${lessons.find(l=>!done.has(l.id))?.id||'machine'}">${done.size?'继续学习 →':'开始第一节 →'}</button></section>
-    <h2 class="roadmap-title">已开放的课程实验 <span style="font-weight:400;color:#8a97ad;font-size:13px">· ${done.size}/4 完成</span></h2>
+    <h2 class="roadmap-title">已开放的课程实验 <span style="font-weight:400;color:#8a97ad;font-size:13px">· ${done.size}/${lessons.length} 完成</span></h2>
     <div class="roadmap-grid">${lessons.map(l=>`<div class="roadmap-item"><span class="roadmap-number">${l.num}</span><div style="flex:1"><h3>${l.title}</h3><p>${l.intro}</p><button class="mini-pill" data-nav="${l.id}" style="margin-top:12px">${done.has(l.id)?'再体验一次':'进入实验'} →</button></div><span class="claim-pill">${done.has(l.id)?'已完成':'可体验'}</span></div>`).join('')}</div>
-    <h2 class="roadmap-title">接下来的知识旅程</h2><div class="roadmap-grid">${upcoming.map(([n,t,d])=>`<div class="roadmap-item future"><span class="roadmap-number">${n}</span><div style="flex:1"><h3>${t}</h3><p>${d}</p></div><span class="claim-pill future">规划中</span></div>`).join('')}</div>
     <p class="footer-link" style="margin-top:24px">教学原则：先例子，再观察，再推导；严格区分比喻、数学定理与尚未证明的猜想。</p>`;
   }
   function studyPart(id){
+    if(window.RiemannExtra?.has(id)) return window.RiemannExtra.study(id);
     if(id==='machine')return `<div class="card-kicker">01 / 数学积木</div><h2 class="study-title">函数，其实是一条规则</h2><p>设想一台小机器，它只做一件事：<strong>把输入乘以 2，再加上 1。</strong></p><div class="formula-box">f(x) = 2x + 1</div><div class="step"><span class="step-num">1</span><div>输入 <strong>2</strong>：2 × 2 + 1 = <strong>5</strong></div></div><div class="step"><span class="step-num">2</span><div>输入 <strong>3</strong>：3 × 2 + 1 = <strong>7</strong></div></div><div class="step"><span class="step-num">3</span><div>规则始终不变，<strong>x</strong> 只代表正在输入的数。</div></div><div class="note">想起 ζ(s) 了吗？ζ 是机器的名字，s 是输入的数字。我们先用最简单的 f(x) 练手。</div>`;
     if(id==='zeta')return `<div class="card-kicker">02 / 无穷求和</div><h2 class="study-title">这次换一台机器：ζ</h2><p>当输入是 <strong>2</strong> 时，泽塔函数要求我们把下面这些分数不断加起来。</p><div class="formula-box" style="font-size:21px">ζ(2) = 1 + ¼ + ⅑ + ¹⁄₁₆ + …</div><div class="step"><span class="step-num">1</span><div>只加 <strong>1</strong> 项，总和是 1。</div></div><div class="step"><span class="step-num">2</span><div>加 <strong>2</strong> 项，总和是 1 + 1/4 = 1.25。</div></div><div class="step"><span class="step-num">3</span><div>不断增加项数，结果越来越靠近 <strong>1.644934…</strong>。</div></div><div class="note">这叫收敛。提醒：原始无穷加法并不能处理任意输入；这里的 ζ(2) 是适用的。</div>`;
     if(id==='rotate')return `<div class="card-kicker">03 / 数学新方向</div><h2 class="study-title">试试一个特殊的数字 i</h2><p>数学家定义 <strong>i × i = −1</strong>。在复平面上，我们可以把乘以 i 看作逆时针旋转 90°。</p><div class="formula-box">i × i = −1</div><div class="step"><span class="step-num">1</span><div>从 <strong>1</strong> 出发，箭头指向右边。</div></div><div class="step"><span class="step-num">2</span><div>乘一次 i，变成 <strong>i</strong>：指向上方。</div></div><div class="step"><span class="step-num">3</span><div>再乘一次 i，变成 <strong>−1</strong>：指向左边。</div></div><div class="note">关键点：i 不是一个纯粹的方向箭头，它是可以按乘法规则运算的复数。</div>`;
     return `<div class="card-kicker">04 / 复数地图</div><h2 class="study-title">给数字增加第二个方向</h2><p>普通的实数只有左右一条数轴。复数 <strong>a + bi</strong> 多了一个上下方向。</p><div class="formula-box">z = a + bi</div><div class="step"><span class="step-num">1</span><div><strong>a</strong> 代表横坐标（实部），向右为正。</div></div><div class="step"><span class="step-num">2</span><div><strong>b</strong> 代表纵坐标（虚部的系数），向上为正。</div></div><div class="step"><span class="step-num">3</span><div>例如 <strong>3 + 2i</strong>，就是向右走 3 格、向上走 2 格。</div></div><div class="note">以后遇到 0.5 + 14.13i，就可以把它看成同样的二维坐标，而不是神秘代码。</div>`;
   }
-  const quizzes={
+  const quizzes=Object.assign({
     machine:{q:'按 f(x) = 2x + 1，输入 4 会输出多少？',opts:[8,9,10],answer:'9',explain:'4 × 2 + 1 = 9。你已经理解函数的输入和输出。'},
     zeta:{q:'ζ(2) 只加前两项，结果是多少？',opts:['1.25','1.50','1.645'],answer:'1.25',explain:'第一项 1，加第二项 1/4，得到 1.25；它还不是无穷和。'},
     rotate:{q:'从 1 出发，连续乘以 i 两次会得到什么？',opts:['i','−1','−i'],answer:'−1',explain:'1 → i → −1，旋转了两个 90°，总共 180°。'},
     plane:{q:'复数 3 + 2i 对应哪个坐标？',opts:['(2, 3)','(3, 2)','(3, −2)'],answer:'(3, 2)',explain:'实部 3 是横坐标，虚部系数 2 是纵坐标。'}
-  };
+  },window.RiemannExtra?.quizzes||{});
   function renderLesson(id){
     const l=lessons.find(x=>x.id===id), q=quizzes[id], idx=lessons.findIndex(x=>x.id===id);
-    main.innerHTML=`<div class="eyebrow">${l.tag} · 第 ${idx+1} / 4 节</div><h1 class="page-title">${l.title}</h1><p class="page-desc">${l.intro}</p><div class="workbench"><section class="study-card" aria-label="课程讲解">${studyPart(id)}</section><section class="lab-card" aria-label="可交互实验"><div class="lab-header"><div><div class="card-kicker">INTERACTIVE LAB</div><h2 class="lab-title">亲手试一试</h2></div><span class="live-pill">实时反馈</span></div><p class="lab-intro">${labIntro(id)}</p><div class="lab-body" id="labBody"></div><p class="lab-caption">${labCaption(id)}</p></section></div>
+    main.innerHTML=`<div class="eyebrow">${l.tag} · 第 ${idx+1} / ${lessons.length} 节</div><h1 class="page-title">${l.title}</h1><p class="page-desc">${l.intro}</p><div class="workbench"><section class="study-card" aria-label="课程讲解">${studyPart(id)}</section><section class="lab-card" aria-label="可交互实验"><div class="lab-header"><div><div class="card-kicker">INTERACTIVE LAB</div><h2 class="lab-title">亲手试一试</h2></div><span class="live-pill">实时反馈</span></div><p class="lab-intro">${labIntro(id)}</p><div class="lab-body" id="labBody"></div><p class="lab-caption">${labCaption(id)}</p></section></div>
     <section class="quiz-card" aria-label="理解检查"><div><div class="card-kicker">CHECK YOUR UNDERSTANDING</div><h2 class="quiz-title">用一个小问题检验理解</h2><div class="quiz-desc">${q.q}</div></div><div><div class="quiz-options" role="group" aria-label="选择答案">${q.opts.map(a=>`<button class="quiz-option" type="button" data-quiz="${String(a)}">${a}</button>`).join('')}</div><div class="quiz-feedback" id="quizFeedback" role="status" aria-live="polite">${done.has(id)?'✓ 这节课已完成；也可以再做一次。':'选一个答案，答对后将自动记录学习进度。'}</div></div></section>
-    <div class="bottom-nav"><span class="footer-link">每一小步都可反复练习</span><div class="bottom-actions"><button class="ghost-btn" data-nav="${idx===0?'home':lessons[idx-1].id}">← ${idx===0?'课程总览':'上一节'}</button><button class="primary-btn" data-nav="${idx===3?'home':lessons[idx+1].id}">${idx===3?'课程总览':'下一节 →'}</button></div></div>`;
+    <div class="bottom-nav"><span class="footer-link">每一小步都可反复练习</span><div class="bottom-actions"><button class="ghost-btn" data-nav="${idx===0?'home':lessons[idx-1].id}">← ${idx===0?'课程总览':'上一节'}</button><button class="primary-btn" data-nav="${idx===lessons.length-1?'home':lessons[idx+1].id}">${idx===lessons.length-1?'课程总览':'下一节 →'}</button></div></div>`;
     renderLab();
   }
-  function labIntro(id){return ({machine:'拖动输入数字，观察同一规则如何产生不同结果。',zeta:'改变累计项数 n，看部分和怎样靠近极限。',rotate:'点击按钮，让箭头真正旋转起来。',plane:'自己修改 a 和 b：把抽象的数字变成一个可见坐标。'})[id];}
-  function labCaption(id){return ({machine:'本实验使用 f(x) = 2x + 1。ζ(s) 的运算会更复杂，但“输入 → 规则 → 输出”完全相同。',zeta:'图中的极限值是数学上已知的 ζ(2)=π²/6。滑块最多只加到 200 项，不能用有限项代替真正的无穷和。',rotate:'旋转 90° 是乘以 i 的精确几何效果，不只是动画效果。',plane:'复数坐标轴上的两个方向互相垂直；复数还具有独特的乘法运算。'})[id];}
+  function labIntro(id){return ({machine:'拖动输入数字，观察同一规则如何产生不同结果。',zeta:'改变累计项数 n，看部分和怎样靠近极限。',rotate:'点击按钮，让箭头真正旋转起来。',plane:'自己修改 a 和 b：把抽象的数字变成一个可见坐标。'})[id] || window.RiemannExtra?.labIntro(id);}
+  function labCaption(id){return ({machine:'本实验使用 f(x) = 2x + 1。ζ(s) 的运算会更复杂，但“输入 → 规则 → 输出”完全相同。',zeta:'图中的极限值是数学上已知的 ζ(2)=π²/6。滑块最多只加到 200 项，不能用有限项代替真正的无穷和。',rotate:'旋转 90° 是乘以 i 的精确几何效果，不只是动画效果。',plane:'复数坐标轴上的两个方向互相垂直；复数还具有独特的乘法运算。'})[id] || window.RiemannExtra?.labCaption(id);}
   function zetaPartial(k,n){let v=0;for(let j=1;j<=n;j++)v+=Math.pow(j,-k);return v;}
   function zetaTarget(k){return ({2:1.6449340668482264,3:1.2020569031595943,4:1.0823232337111382,5:1.03692775514337})[k];}
   function fmtNum(n){return Number(n).toFixed(6);}
@@ -81,6 +75,7 @@
   }
   function renderLab(){
     const lab=document.getElementById('labBody');if(!lab)return;
+    if(window.RiemannExtra?.has(current)){window.RiemannExtra.renderLab(current,lab);return;}
     if(current==='machine'){
       const x=state.input, y=x*2+1;
       lab.innerHTML=`<div class="control-label"><span>输入数字 x</span><strong id="inputValue">${x}</strong></div><input aria-label="函数输入值" class="range" type="range" id="machineInput" min="0" max="12" step="1" value="${x}"/><div class="value-pills">${[0,2,4,8,12].map(v=>`<button class="mini-pill ${v===x?'selected':''}" data-input="${v}">${v}</button>`).join('')}</div><div class="machine-flow"><div class="machine-box"><span>输入</span><strong>${x}</strong></div><div class="flow-arrow">→</div><div class="machine-core"><span>函数机器</span><strong>× 2 + 1</strong></div><div class="flow-arrow">→</div><div class="machine-box"><span>输出</span><strong>${y}</strong></div></div><div class="math-result">计算过程：<strong>${x} × 2 + 1 = ${y}</strong></div>`;
@@ -140,7 +135,7 @@
     document.getElementById('quizFeedback').textContent=ok?`✓ 正确！${q.explain}`:'还差一点。可以回到上面的实验亲手试一下，再选一次。';
     if(ok){done.add(current);saveProgress();renderNav();renderProgress();}
   });
-  document.getElementById('resetProgress').addEventListener('click',()=>{if(confirm('确定清空这四节课的学习记录吗？')){done.clear();saveProgress();goTo('home');}});
+  document.getElementById('resetProgress').addEventListener('click',()=>{if(confirm('确定清空全部课程的学习记录吗？')){done.clear();saveProgress();goTo('home');}});
   document.getElementById('menuButton').addEventListener('click',()=>{const isOpen=sidebar.classList.toggle('open');document.getElementById('menuButton').setAttribute('aria-expanded',String(isOpen));});
   goTo('home');
 })();
