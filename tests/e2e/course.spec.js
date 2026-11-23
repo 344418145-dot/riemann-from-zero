@@ -33,7 +33,7 @@ test('four lessons work, wrong answers do not complete lessons, progress survive
   const response = await page.goto('/', { waitUntil: 'domcontentloaded' });
   expect(response.status()).toBe(200);
   await expect(page).toHaveTitle(/从零理解黎曼猜想/);
-  for (const [asset, mime] of [['styles.css', /text\/css/], ['app.js', /(?:javascript|ecmascript)/]]) {
+  for (const [asset, mime] of [['styles.css', /text\/css/], ['app.js', /(?:javascript|ecmascript)/], ['extra-lessons.js', /(?:javascript|ecmascript)/]]) {
     const response = await request.get(`/${asset}`);
     expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toMatch(mime);
@@ -48,9 +48,9 @@ test('four lessons work, wrong answers do not complete lessons, progress survive
   const quiz = page.getByRole('group', { name: '选择答案' });
   await quiz.getByRole('button', { name: '8', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('还差一点');
-  await expect(page.locator('#progressText')).toHaveText('0 / 4');
+  await expect(page.locator('#progressText')).toHaveText('0 / 9');
   await quiz.getByRole('button', { name: '9', exact: true }).click();
-  await expect(page.locator('#progressText')).toHaveText('1 / 4');
+  await expect(page.locator('#progressText')).toHaveText('1 / 9');
 
   await page.getByRole('button', { name: '下一节 →', exact: true }).click();
   await page.getByRole('button', { name: '1 项', exact: true }).click();
@@ -85,10 +85,10 @@ test('four lessons work, wrong answers do not complete lessons, progress survive
   await expect(page.locator('.plane-point')).toHaveAttribute('cx', '75');
   await expect(page.locator('.plane-point')).toHaveAttribute('cy', '39');
   await quiz.getByRole('button', { name: '(3, 2)', exact: true }).click();
-  await expect(page.locator('#progressText')).toHaveText('4 / 4');
+  await expect(page.locator('#progressText')).toHaveText('4 / 9');
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#progressText')).toHaveText('4 / 4');
-  await expect(page.getByRole('heading', { name: /已开放的课程实验/ })).toContainText('4/4 完成');
+  await expect(page.locator('#progressText')).toHaveText('4 / 9');
+  await expect(page.getByRole('heading', { name: /已开放的课程实验/ })).toContainText('4/9 完成');
   await openLesson(page, /04 复数为什么像二维坐标/);
   await expect(page.getByRole('status')).toContainText('这节课已完成');
   await page.evaluate(() => window.scrollTo(0, 0));
