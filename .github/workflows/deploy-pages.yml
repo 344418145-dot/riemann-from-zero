@@ -35,7 +35,7 @@ jobs:
       - name: Stage public course files only
         run: |
           mkdir -p _site
-          cp index.html styles.css app.js _site/
+          cp index.html styles.css app.js extra-lessons.js _site/
           printf '%s\n' 'lxxlovechelsea.top' > _site/CNAME
           printf '{"commit":"%s"}\n' "$GITHUB_SHA" > _site/version.json
       - uses: actions/configure-pages@v5

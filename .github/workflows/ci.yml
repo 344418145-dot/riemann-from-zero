@@ -16,13 +16,15 @@ jobs:
           node-version: '22'
           cache: npm
       - name: Validate JavaScript syntax
-        run: node --check app.js
+        run: |
+          node --check app.js
+          node --check extra-lessons.js
       - name: Validate assets and deployment configuration
         run: |
           python3 - <<'PYTHON'
           from pathlib import Path
           html=Path('index.html').read_text(encoding='utf-8')
-          for filename in ('styles.css','app.js'):
+          for filename in ('styles.css','app.js','extra-lessons.js'):
               assert Path(filename).exists(), filename
               assert './'+filename in html, filename
           for filename in ('compose.yaml','deploy/aliyun/Caddyfile','CODEX_DEPLOY.md'):
