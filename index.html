@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0d1833" />
+  <meta name="description" content="通过亲手操作的可视化实验，从零理解函数、泽塔函数、复数和黎曼猜想。" />
+  <title>从零理解黎曼猜想 · 交互课程原型</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><span class="brand-mark">ζ</span><span><strong>从零理解</strong><small>RIEMANN LAB</small></span></div>
+      <div class="sidebar-head"><span>你的学习路径</span><span class="tiny-pill">MVP · 01</span></div>
+      <nav id="lessonNav" aria-label="课程目录"></nav>
+      <div class="sidebar-footer">
+        <div class="progress-title"><span>学习进度</span><strong id="progressText">0 / 4</strong></div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <p>不跳步骤，也不要求你死记公式。</p>
+        <button id="resetProgress" class="sidebar-reset" type="button">↺ 重新开始学习</button>
+      </div>
+    </aside>
+    <div class="main-shell">
+      <header class="topbar">
+        <button class="menu-button" id="menuButton" type="button" aria-label="打开课程目录" aria-expanded="false">☰</button>
+        <div class="breadcrumb"><span>从零理解黎曼猜想</span><span class="crumb-dot">/</span><strong id="topLesson">课程体验</strong></div>
+        <span class="topbar-label"><span class="status-dot"></span> 交互式学习原型</span>
+      </header>
+      <main id="main" tabindex="-1"></main>
+    </div>
+  </div>
+  <script src="./app.js" defer></script>
+</body>
+</html>

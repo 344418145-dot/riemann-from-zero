@@ -1,0 +1,24 @@
+name: Validate static course
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JavaScript syntax
+        run: node --check app.js
+      - name: Validate assets and deployment configuration
+        run: |
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          for filename in ('styles.css','app.js'):
+              assert Path(filename).exists(), filename
+              assert './'+filename in html, filename
+          for filename in ('compose.yaml','deploy/netease/Caddyfile','CODEX_DEPLOY.md'):
+              assert Path(filename).exists(), filename
+          print('Static course content validated')
+          PYTHON

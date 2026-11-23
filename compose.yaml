@@ -1,0 +1,22 @@
+# Works on a NetEase Cloud Linux VM with Docker Compose installed.
+# SITE_ADDRESS=:80 is HTTP-only. Set SITE_ADDRESS=your.domain.example for HTTPS.
+services:
+  course:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./index.html:/srv/index.html:ro
+      - ./styles.css:/srv/styles.css:ro
+      - ./app.js:/srv/app.js:ro
+      - ./deploy/netease/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  caddy_data:
+  caddy_config:
