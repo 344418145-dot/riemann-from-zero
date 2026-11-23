@@ -1,0 +1,73 @@
+name: Deploy course to Alibaba Cloud VM
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+
+concurrency:
+  group: aliyun-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: ${{ vars.ALIYUN_DEPLOY_ENABLED == 'true' }}
+    uses: ./.github/workflows/ci.yml
+  deploy:
+    needs: verify
+    if: ${{ vars.ALIYUN_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Validate course syntax
+        run: node --check app.js
+      - name: Prepare trusted SSH
+        env:
+          SSH_KEY: ${{ secrets.ALIYUN_SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.ALIYUN_SSH_HOST }}
+          SSH_USER: ${{ secrets.ALIYUN_SSH_USER }}
+          SSH_KNOWN_HOSTS: ${{ secrets.ALIYUN_SSH_KNOWN_HOSTS }}
+          SSH_PORT: ${{ secrets.ALIYUN_SSH_PORT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_HOST" && test -n "$SSH_USER" && test -n "$SSH_KEY" && test -n "$SSH_KNOWN_HOSTS"
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/id_deploy"
+          chmod 600 "$HOME/.ssh/id_deploy"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Sync and restart service
+        env:
+          DEPLOY_HOST: ${{ secrets.ALIYUN_SSH_HOST }}
+          DEPLOY_USER: ${{ secrets.ALIYUN_SSH_USER }}
+          DEPLOY_PORT: ${{ secrets.ALIYUN_SSH_PORT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          SSH_OPTS="-i $HOME/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -p $DEPLOY_PORT"
+          ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST" 'set -eu; cd /opt/riemann-from-zero; test -f .env; command -v docker; docker compose version; if test -f compose.yaml; then umask 077; mkdir -p backups; tar -czf "backups/predeploy-$(date -u +%Y%m%dT%H%M%SZ).tgz" --exclude=./backups --exclude=./.git .env compose.yaml deploy index.html styles.css app.js; fi'
+          ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST" 'mkdir -p /opt/riemann-from-zero/deploy/aliyun'
+          rsync -av -e "ssh $SSH_OPTS"             index.html styles.css app.js compose.yaml             "$DEPLOY_USER@$DEPLOY_HOST:/opt/riemann-from-zero/"
+          rsync -av -e "ssh $SSH_OPTS"             deploy/aliyun/Caddyfile             "$DEPLOY_USER@$DEPLOY_HOST:/opt/riemann-from-zero/deploy/aliyun/"
+          ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST"             'set -eu; cd /opt/riemann-from-zero; test -f .env; docker compose config --quiet; docker compose up -d --force-recreate; docker compose exec -T course caddy validate --config /etc/caddy/Caddyfile; docker compose ps; curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors --resolve lxxlovechelsea.top:443:127.0.0.1 https://lxxlovechelsea.top/ > /dev/null'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Accept production over public HTTPS
+        run: npm run test:e2e:public
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: browser-acceptance-production
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

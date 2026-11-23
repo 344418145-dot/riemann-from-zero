@@ -12,7 +12,7 @@ python3 -m http.server 8000
 # 浏览器访问 http://localhost:8000
 ```
 
-无需安装 npm、无需后端。手机端自适应布局；浏览器可保存本机学习进度。Google Fonts 不能加载时自动使用本地字体。
+运行课程无需安装 npm、无需后端。手机端自适应布局；浏览器可保存本机学习进度。Google Fonts 不能加载时自动使用本地字体。npm 依赖只用于开发验收。
 
 ## 已实现（4 个可以独立完成的互动课程）
 
@@ -48,19 +48,31 @@ python3 -m http.server 8000
 
 - 这是浏览器单机原型，不含账户登录、云同步、后台编辑和课程发布系统。
 - `localStorage` 进度只保留在当前浏览器。
-- 已提供静态源码 CI；网易云自动部署须先配置服务器与 Secrets。
+- 已提供静态检查及真实浏览器 CI；正式发布使用免费 GitHub Pages，无需服务器和 SSH 密钥。
 
 ## 未来可迁移架构
 
 当前零依赖结构利于快速体验；正式开发时可迁移至 React + TypeScript + Vite，使用组件化实验引擎、结构化课程数据、单元测试和可访问性规范。不要为了重构而改变已验证的学习节奏。
 
-## 网易云部署（配置已提供，尚未上线）
+## 正式发布：GitHub Pages
 
-- 主要方案：网易云 Linux 云服务器，使用 `compose.yaml` + Caddy 无后端部署。
-- 配置步骤：`deploy/netease/README.md`。
-- 持续部署：`.github/workflows/deploy-netease.yml`（仅在已安全配置服务器授权后启用）。
+- 正式域名：`https://lxxlovechelsea.top/`，域名与 DNS 在阿里云管理，网页由 GitHub Pages 托管。
+- 用户确认不购买服务器，并授权仓库改为 Public 使用免费 Pages。
+- 持续部署：`.github/workflows/deploy-pages.yml`，main 更新后先运行浏览器 CI，再发布网站并验收正式 HTTPS。
 - GitHub CI：`.github/workflows/ci.yml`。
-- Codex 交接：`CODEX_DEPLOY.md`（网易云优先），后续产品开发：`CODEX_NEXT.md`。
-- 没有服务器登录权限、域名及仓库创建权限时，不应宣称已公网部署。
+- 原始任务书：`CODEX_DEPLOY.md`、`CODEX_DEPLOY_LXX.md`（部署目标已由后续用户指令更新为免费 Pages），后续产品开发：`CODEX_NEXT.md`。
+- Compose/Caddy 配置保留于 `compose.yaml`、`deploy/aliyun/`，供未来用户明确要求 VM 部署时使用。
 
-自动部署默认关闭：`NETEASE_DEPLOY_ENABLED=false`。GitHub Pages 备选流程也默认关闭（`PAGES_DEPLOY_ENABLED=false`），不影响现有域名上的其他网站。正式域名为 `lxxlovechelsea.top`；服务器 `.env` 从示例复制前，必须先检查现有 80/443 服务和 DNS。
+Pages 使用 `PAGES_DEPLOY_ENABLED=true`；阿里云 VM 发布保持 `ALIYUN_DEPLOY_ENABLED=false`。Pages 仅上传三个课程文件、CNAME 和版本标记，不发布内部文档或测试依赖。发布权限来自 GitHub 自动提供的短期 `GITHUB_TOKEN` 与 OIDC，不需要额外保存任何长期密钥。部署实况见 `docs/DEPLOYMENT_STATUS.md`。
+
+## 浏览器验收
+
+```bash
+npm ci
+npx playwright install chromium
+npm run test:e2e
+# 正式公网验收，严格验证 TLS，且必须返回课程页面
+npm run test:e2e:public
+```
+
+Playwright 分别使用 1440px 桌面和 390px 手机视口，验证四节实验、错误与正确答题、刷新进度、资源响应、手机触摸目录及滑块和五个页面的横向溢出。测试阻断可选的 Google Fonts 请求来验证本地字体回退，课程资源仍真实加载。HTML 报告和截图生成于 `playwright-report/`、`test-results/`，并作为 Actions 构件保存。公网测试失败时不能宣布上线。

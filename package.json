@@ -1,0 +1,12 @@
+{
+  "name": "riemann-from-zero",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:public": "E2E_BASE_URL=https://lxxlovechelsea.top playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
+  }
+}

@@ -3,11 +3,18 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_call:
+permissions:
+  contents: read
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
       - name: Validate JavaScript syntax
         run: node --check app.js
       - name: Validate assets and deployment configuration
@@ -18,7 +25,19 @@ jobs:
           for filename in ('styles.css','app.js'):
               assert Path(filename).exists(), filename
               assert './'+filename in html, filename
-          for filename in ('compose.yaml','deploy/netease/Caddyfile','CODEX_DEPLOY.md'):
+          for filename in ('compose.yaml','deploy/aliyun/Caddyfile','CODEX_DEPLOY.md'):
               assert Path(filename).exists(), filename
           print('Static course content validated')
           PYTHON
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Test four lessons in desktop and mobile browsers
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: browser-acceptance-local
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

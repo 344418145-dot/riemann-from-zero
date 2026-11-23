@@ -12,20 +12,65 @@ permissions:
 
 concurrency:
   group: github-pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
+  verify:
+    if: ${{ vars.PAGES_DEPLOY_ENABLED == 'true' }}
+    uses: ./.github/workflows/ci.yml
   deploy:
+    needs: verify
     if: ${{ vars.PAGES_DEPLOY_ENABLED == 'true' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Stage public course files only
+        run: |
+          mkdir -p _site
+          cp index.html styles.css app.js _site/
+          printf '%s\n' 'lxxlovechelsea.top' > _site/CNAME
+          printf '{"commit":"%s"}\n' "$GITHUB_SHA" > _site/version.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
+      - name: Wait for this commit on public HTTPS
+        run: |
+          python3 - <<'PYTHON'
+          import json, os, time, urllib.request
+          expected = os.environ['GITHUB_SHA']
+          url = 'https://lxxlovechelsea.top/version.json?commit=' + expected
+          for attempt in range(36):
+              try:
+                  with urllib.request.urlopen(url, timeout=10) as response:
+                      if json.load(response).get('commit') == expected:
+                          print('Verified deployed commit:', expected)
+                          break
+              except Exception as error:
+                  print(type(error).__name__, 'while waiting for deployment')
+              time.sleep(5)
+          else:
+              raise SystemExit('This commit is not available over public HTTPS')
+          PYTHON
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Accept production in desktop and mobile browsers
+        run: npm run test:e2e:public
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: browser-acceptance-production
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

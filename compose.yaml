@@ -1,4 +1,4 @@
-# Works on a NetEase Cloud Linux VM with Docker Compose installed.
+# Works on a Alibaba Cloud Linux VM with Docker Compose installed.
 # SITE_ADDRESS=:80 is HTTP-only. Set SITE_ADDRESS=your.domain.example for HTTPS.
 services:
   course:
@@ -14,7 +14,7 @@ services:
       - ./index.html:/srv/index.html:ro
       - ./styles.css:/srv/styles.css:ro
       - ./app.js:/srv/app.js:ro
-      - ./deploy/netease/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/aliyun/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
 volumes:
