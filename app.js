@@ -23,8 +23,7 @@
   function renderNav(){
     let groups=[...new Set(lessons.map(l=>l.chapter))].map(title=>[title,lessons.filter(l=>l.chapter===title)]);
     nav.innerHTML=`<div class="nav-group"><button class="nav-item ${current==='home'?'active':''}" data-nav="home"><span class="nav-index">⌂</span><span class="nav-title">课程总览</span></button></div>`+
-      groups.map(([title,items])=>`<div class="nav-group"><div class="nav-group-title">${title}</div>${items.map(l=>`<button class="nav-item ${current===l.id?'active':''}" data-nav="${l.id}" ${current===l.id?'aria-current="page"':''}><span class="nav-index">${l.num}</span><span class="nav-title">${l.title}</span>${done.has(l.id)?'<span class="nav-complete" aria-label="已完成">✓</span>':''}</button>`).join('')}</div>`).join('')+
-      `<div class="nav-group"><div class="nav-group-title">后续课程 · 规划中</div>${upcoming.map(([num,title])=>`<div class="nav-item locked"><span class="nav-index">${num}</span><span class="nav-title">${title}</span><span class="nav-lock">🔒</span></div>`).join('')}</div>`;
+      groups.map(([title,items])=>`<div class="nav-group"><div class="nav-group-title">${title}</div>${items.map(l=>`<button class="nav-item ${current===l.id?'active':''}" data-nav="${l.id}" ${current===l.id?'aria-current="page"':''}><span class="nav-index">${l.num}</span><span class="nav-title">${l.title}</span>${done.has(l.id)?'<span class="nav-complete" aria-label="已完成">✓</span>':''}</button>`).join('')}</div>`).join('');
   }
   function renderProgress(){document.getElementById('progressText').textContent=`${done.size} / ${lessons.length}`;document.getElementById('progressFill').style.width=`${done.size/lessons.length*100}%`;}
   function goTo(id){
