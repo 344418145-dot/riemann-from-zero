@@ -42,22 +42,26 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+          name: github-pages-${{ github.run_attempt }}
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
       - name: Wait for this commit on public HTTPS
         run: |
           python3 - <<'PYTHON'
           import json, os, time, urllib.request
           expected = os.environ['GITHUB_SHA']
           url = 'https://lxxlovechelsea.top/version.json?commit=' + expected
-          for attempt in range(36):
+          for attempt in range(60):
               try:
-                  with urllib.request.urlopen(url, timeout=10) as response:
+                  request = urllib.request.Request(url + '&attempt=' + str(attempt), headers={'User-Agent': 'riemann-deploy-check', 'Cache-Control': 'no-cache'})
+                  with urllib.request.urlopen(request, timeout=10) as response:
                       if json.load(response).get('commit') == expected:
                           print('Verified deployed commit:', expected)
                           break
               except Exception as error:
-                  print(type(error).__name__, 'while waiting for deployment')
+                  print(type(error).__name__, str(error), 'while waiting for deployment', flush=True)
               time.sleep(5)
           else:
               raise SystemExit('This commit is not available over public HTTPS')
@@ -69,7 +73,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: browser-acceptance-production
+          name: browser-acceptance-production-${{ github.run_attempt }}
           path: |
             playwright-report/
             test-results/

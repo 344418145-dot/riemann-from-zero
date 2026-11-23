@@ -36,7 +36,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: browser-acceptance-local
+          name: browser-acceptance-local-${{ github.run_attempt }}
           path: |
             playwright-report/
             test-results/
